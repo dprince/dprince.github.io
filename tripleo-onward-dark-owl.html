@@ -53,36 +53,30 @@
 		</div>
 	  </div>
 	  <div class="content">
-<div class="page-header"><h1>/home/dprince <small>TripleO</small></h1></div>
-<div class='article'>
-	<h2>TripleO: onward dark owl</h2>
-	<div class="well small">Permalink: <a class="more" href="https://dprince.github.io/tripleo-onward-dark-owl.html">2016-08-04 17:00:00-04:00</a>
+	<div class='article'>
+		<div class="page-header"><h1>TripleO: onward dark owl</h1></div>
+		<div class="well small">Permalink: <a class="more" href="https://dprince.github.io/tripleo-onward-dark-owl.html">2016-08-04 17:00:00-04:00</a>
 by <a class="url fn" href="https://dprince.github.io/author/dan-prince.html">Dan Prince </a>
  in <a href="https://dprince.github.io/category/tripleo.html">TripleO</a>
 tags: <a href="https://dprince.github.io/tag/tripleo.html">tripleo</a> <a href="https://dprince.github.io/tag/openstack.html">openstack</a> </div>
-	<div class="summary"> <a class="btn primary xsmall" href="https://dprince.github.io/tripleo-onward-dark-owl.html">more…</a>
-	</div>
-</div>	
-<div class='article'>
-	<h2>TripleO: remote execution</h2>
-	<div class="well small">Permalink: <a class="more" href="https://dprince.github.io/tripleo-remote-execution.html">2016-06-20 17:00:00-04:00</a>
-by <a class="url fn" href="https://dprince.github.io/author/dan-prince.html">Dan Prince </a>
- in <a href="https://dprince.github.io/category/tripleo.html">TripleO</a>
-tags: <a href="https://dprince.github.io/tag/tripleo.html">tripleo</a> <a href="https://dprince.github.io/tag/openstack.html">openstack</a> </div>
-	<div class="summary"> <a class="btn primary xsmall" href="https://dprince.github.io/tripleo-remote-execution.html">more…</a>
-	</div>
-</div>	
-<div class='article'>
-	<h2>Mistral workflow demo for TripleO</h2>
-	<div class="well small">Permalink: <a class="more" href="https://dprince.github.io/mistral-workflow-demo-for-tripleo.html">2015-12-07 09:14:00-05:00</a>
-by <a class="url fn" href="https://dprince.github.io/author/dan-prince.html">Dan Prince </a>
- in <a href="https://dprince.github.io/category/tripleo.html">TripleO</a>
-tags: <a href="https://dprince.github.io/tag/tripleo.html">tripleo</a> <a href="https://dprince.github.io/tag/openstack.html">openstack</a> </div>
-	<div class="summary"> <a class="btn primary xsmall" href="https://dprince.github.io/mistral-workflow-demo-for-tripleo.html">more…</a>
-	</div>
-</div>	
+		<div><p>I was on PTO last week and started hacking on the beginnings of what could
+be a new Undercloud installer that:</p>
+<ul>
+<li>Uses a single process Heat (heat-all)</li>
+<li>It does not require MySQL, Rabbit</li>
+<li>Uses noauth (no Keystone)</li>
+<li>Drives the deployment locally via os-collect-config</li>
+</ul>
+<p>The prototype ends up looking like this:</p>
+<div class="highlight"><pre><span></span>openstack undercloud deploy --templates<span class="o">=</span>/root/tripleo-heat-templates
+</pre></div>
 
 
+<p>A short presentation of the reasons behind this and demo of the prototype is available here:</p>
+<p><a href="https://www.youtube.com/watch?v=y1qMDLAf26Q">Video demo: TripleO onward dark owl</a></p>
+<p>An etherpad with links to the code/patches is here:</p>
+<p><a href="https://etherpad.openstack.org/p/tripleo-composable-undercloud">Etherpad</a></p></div>
+	</div>
 		<footer>
 		  <p>Powered by <a href="http://getpelican.com/">Pelican</a>. Theme based on <a href="http://twitter.github.com/bootstrap/">Twitter Bootstrap</a>.</p>
 		  <p>&copy; Dan Prince</p>
