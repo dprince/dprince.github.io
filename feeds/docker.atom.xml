@@ -6,7 +6,7 @@ for those containers. We'd like to continue to make use of our mature
 configuration interfaces (Heat parameters, Hieradata overrides, Puppet modules)
 to allow our operators to seamlessly take the step towards a fully
 containerized deployment. &lt;/p&gt;
-&lt;p&gt;Turns out with the with the recently added composable service we've got
+&lt;p&gt;With the recently added composable service we've got
 everything we need. This is how we do it...&lt;/p&gt;
 &lt;h1&gt;Install puppet into our base container image&lt;/h1&gt;
 &lt;p&gt;Turns out the first thing you need of you want to generate config files
@@ -64,7 +64,7 @@ cat: /tmp/foo: No such file or directory
 
 
 &lt;h1&gt;When --tags doesn't work&lt;/h1&gt;
-&lt;p&gt;Turns out out --tags option of 'puppet apply' doesn't always give us the
+&lt;p&gt;The --tags option of 'puppet apply' doesn't always give us the
 behavior we are after which is to generate only config files. Some puppet
 modules have custom resources with providers that can execute commands anyway.
 This might be a mysql query or an openstackclient command to create a keystone
