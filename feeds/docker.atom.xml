@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<feed xmlns="http://www.w3.org/2005/Atom"><title>/home/dprince</title><link href="https://dprince.github.io/" rel="alternate"></link><link href="https://dprince.github.io/feeds/tag_tripleo.atom.xml" rel="self"></link><id>https://dprince.github.io/</id><updated>2017-01-25T09:00:00-05:00</updated><entry><title>Docker Puppet</title><link href="https://dprince.github.io/docker-puppet.html" rel="alternate"></link><published>2017-01-25T09:00:00-05:00</published><author><name>Dan Prince</name></author><id>tag:dprince.github.io,2017-01-25:docker-puppet.html</id><summary type="html">&lt;p&gt;Today TripleO leverages Puppet to help configure and manage the
+<feed xmlns="http://www.w3.org/2005/Atom"><title>/home/dprince</title><link href="https://dprince.github.io/" rel="alternate"></link><link href="https://dprince.github.io/feeds/docker.atom.xml" rel="self"></link><id>https://dprince.github.io/</id><updated>2017-01-25T09:00:00-05:00</updated><entry><title>Docker Puppet</title><link href="https://dprince.github.io/docker-puppet.html" rel="alternate"></link><published>2017-01-25T09:00:00-05:00</published><author><name>Dan Prince</name></author><id>tag:dprince.github.io,2017-01-25:docker-puppet.html</id><summary type="html">&lt;p&gt;Today TripleO leverages Puppet to help configure and manage the
 deployment of OpenStack services. As we move towards using Docker
 one of the big questions people have is how will we generate config files
 for those containers. We'd like to continue to make use of our mature
@@ -107,47 +107,4 @@ we need. And we get to carry on with our efforts to deploy with containers.&lt;/
 &lt;ul&gt;
 &lt;li&gt;&lt;a href="http://git.openstack.org/cgit/openstack/puppet-tripleo/tree/lib/puppet/parser/functions/noop_resource.rb"&gt;puppet noop_resource function&lt;/a&gt;&lt;/li&gt;
 &lt;li&gt;&lt;a href="https://review.openstack.org/#/c/416421/29/docker/docker-puppet.py"&gt;docker_puppet.py source code&lt;/a&gt;&lt;/li&gt;
-&lt;/ul&gt;</summary><category term="tripleo"></category><category term="openstack"></category><category term="puppet"></category></entry><entry><title>TripleO: onward dark owl</title><link href="https://dprince.github.io/tripleo-onward-dark-owl.html" rel="alternate"></link><published>2016-08-04T18:00:00-04:00</published><author><name>Dan Prince</name></author><id>tag:dprince.github.io,2016-08-04:tripleo-onward-dark-owl.html</id><summary type="html">&lt;p&gt;&lt;img alt="Onward dark owl" src="https://dprince.github.io/images/dark_owl.png" /&gt;&lt;/p&gt;
-&lt;p&gt;I was on PTO last week and started hacking on the beginnings of what could
-be a new Undercloud installer that:&lt;/p&gt;
-&lt;ul&gt;
-&lt;li&gt;Uses a single process Heat (heat-all)&lt;/li&gt;
-&lt;li&gt;It does not require MySQL, Rabbit&lt;/li&gt;
-&lt;li&gt;Uses noauth (no Keystone)&lt;/li&gt;
-&lt;li&gt;Drives the deployment locally via os-collect-config&lt;/li&gt;
-&lt;/ul&gt;
-&lt;p&gt;The prototype ends up looking like this:&lt;/p&gt;
-&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span&gt;&lt;/span&gt;openstack undercloud deploy --templates&lt;span class="o"&gt;=&lt;/span&gt;/root/tripleo-heat-templates
-&lt;/pre&gt;&lt;/div&gt;
-
-
-&lt;p&gt;A short presentation of the reasons behind this and demo of the prototype is available here:&lt;/p&gt;
-&lt;p&gt;&lt;a href="https://www.youtube.com/watch?v=y1qMDLAf26Q"&gt;Video demo: TripleO onward dark owl&lt;/a&gt;&lt;/p&gt;
-&lt;p&gt;An etherpad with links to the code/patches is here:&lt;/p&gt;
-&lt;p&gt;&lt;a href="https://etherpad.openstack.org/p/tripleo-composable-undercloud"&gt;Etherpad&lt;/a&gt;&lt;/p&gt;</summary><category term="tripleo"></category><category term="openstack"></category></entry><entry><title>TripleO: remote execution</title><link href="https://dprince.github.io/tripleo-remote-execution.html" rel="alternate"></link><published>2016-06-20T17:00:00-04:00</published><author><name>Dan Prince</name></author><id>tag:dprince.github.io,2016-06-20:tripleo-remote-execution.html</id><summary type="html">&lt;p&gt;I had a chance to sit down with Steve Baker at the OpenStack Austin Summit and
-&lt;a href="https://review.openstack.org/310966"&gt;prototype a custom Mistral action&lt;/a&gt; that can drive Heat software deployments.
-Iterating on that idea a bit further I have since posted a few
-&lt;a href="https://etherpad.openstack.org/p/tripleo-remote-execution"&gt;patches&lt;/a&gt; which
-demonstrate a new remote execution feature in TripleO.&lt;/p&gt;
-&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span&gt;&lt;/span&gt;&lt;span class="c1"&gt;#execute a shell script on a specific server name&lt;/span&gt;
-openstack overcloud execute --server-name&lt;span class="o"&gt;=&lt;/span&gt;overcloud-controller-0 test.sh
-
-&lt;span class="c1"&gt;#execute a shell script on only the compute nodes&lt;/span&gt;
-openstack overcloud execute --server-name&lt;span class="o"&gt;=&lt;/span&gt;compute test.sh
-
-&lt;span class="c1"&gt;#execute a shell script on all overcloud nodes&lt;/span&gt;
-openstack overcloud execute --server-name&lt;span class="o"&gt;=&lt;/span&gt;overcloud test.sh
-&lt;/pre&gt;&lt;/div&gt;
-
-
-&lt;p&gt;A couple of things to highlight:&lt;/p&gt;
-&lt;ul&gt;
-&lt;li&gt;It is API driven.&lt;/li&gt;
-&lt;li&gt;It does not use ssh (rather it uses our TripleO os-collect-config agent).&lt;/li&gt;
-&lt;li&gt;Relies on Heat software deployments for much of its functionality the same
-  way we do deployments in TripleO today.&lt;/li&gt;
-&lt;li&gt;Power is in the workflows... but the CLI work is cool and demonstrates it nicely.&lt;/li&gt;
-&lt;/ul&gt;
-&lt;p&gt;A short demo of the new TripleO Newton feature here:&lt;/p&gt;
-&lt;p&gt;&lt;a href="https://www.youtube.com/watch?v=Hb-Y8AqVt1E"&gt;Video demo: TripleO remote execute&lt;/a&gt;&lt;/p&gt;</summary><category term="tripleo"></category><category term="openstack"></category></entry><entry><title>Mistral workflow demo for TripleO</title><link href="https://dprince.github.io/mistral-workflow-demo-for-tripleo.html" rel="alternate"></link><published>2015-12-07T09:14:00-05:00</published><author><name>Dan Prince</name></author><id>tag:dprince.github.io,2015-12-07:mistral-workflow-demo-for-tripleo.html</id><summary type="html">&lt;p&gt;A demonstration of how we might use Mistral as a workflow tool in TripleO:&lt;/p&gt;
-&lt;p&gt;&lt;a href="https://www.youtube.com/watch?v=bnAT37O-sdw"&gt;Video demo: Mistral workflow demo for TripleO&lt;/a&gt;&lt;/p&gt;</summary><category term="tripleo"></category><category term="openstack"></category></entry></feed>
+&lt;/ul&gt;</summary><category term="tripleo"></category><category term="openstack"></category><category term="puppet"></category></entry></feed>

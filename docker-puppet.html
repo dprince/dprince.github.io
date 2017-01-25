@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="utf-8">
+	<title>/home/dprince</title>
+	<meta name="description" content="">
+	<meta name="author" content="Dan Prince">
+
+	<!-- HTML5 shim, for IE6-8 support of HTML elements -->
+	<!--[if lt IE 9]>
+		<script src="https://dprince.github.io/theme/html5.js"></script>
+	<![endif]-->
+
+	<!-- Styles -->
+	<link href="https://dprince.github.io/theme/bootstrap.min.css" rel="stylesheet">
+	<link href="https://dprince.github.io/theme/local.css" rel="stylesheet">
+	<link href="https://dprince.github.io/theme/pygments.css" rel="stylesheet">
+
+	<!-- Feeds -->
+	<link href="https://dprince.github.io/feeds/all.atom.xml" type="application/atom+xml" rel="alternate" title="/home/dprince Atom Feed" />
+
+
+
+
+</head>
+<body>
+	<div class="topbar">
+	  <div class="topbar-inner">
+		<div class="container-fluid">
+		  <a class="brand" href="https://dprince.github.io/">/home/dprince</a>
+			<ul class="nav">
+					<li class="active"><a href="https://dprince.github.io/category/docker.html">Docker</a></li>
+					<li ><a href="https://dprince.github.io/category/tripleo.html">TripleO</a></li>
+			</ul>
+			<p class="pull-right"><a href="https://dprince.github.io/archives.html">[archives]</a> <a href="https://dprince.github.io/tags.html">[tags]</a></p>
+		</div>
+	  </div>
+	</div>
+
+	<div class="container-fluid">
+	  <div class="sidebar">
+		<div class="well">
+			<h3>Blogroll</h3>
+			<ul>
+				<li><a href="http://tripleo.org">TripleO</a></li>
+			</ul>
+			<div class="social">
+			<h3>Social</h3>
+			<ul>
+				<li><a href="https://github.com/dprince">Github</a></li>
+				<li><a href="https://twitter.com/dovetaildan">Twitter</a></li>
+			</ul>
+			</div>
+		</div>
+	  </div>
+	  <div class="content">
+	<div class='article'>
+		<div class="page-header"><h1>Docker Puppet</h1></div>
+		<div class="well small">Permalink: <a class="more" href="https://dprince.github.io/docker-puppet.html">2017-01-25 09:00:00-05:00</a>
+by <a class="url fn" href="https://dprince.github.io/author/dan-prince.html">Dan Prince </a>
+ in <a href="https://dprince.github.io/category/docker.html">Docker</a>
+tags: <a href="https://dprince.github.io/tag/tripleo.html">tripleo</a> <a href="https://dprince.github.io/tag/openstack.html">openstack</a> <a href="https://dprince.github.io/tag/puppet.html">puppet</a> </div>
+		<div><p>Today TripleO leverages Puppet to help configure and manage the
+deployment of OpenStack services. As we move towards using Docker
+one of the big questions people have is how will we generate config files
+for those containers. We'd like to continue to make use of our mature
+configuration interfaces (Heat parameters, Hieradata overrides, Puppet modules)
+to allow our operators to seamlessly take the step towards a fully
+containerized deployment. </p>
+<p>Turns out with the with the recently added composable service we've got
+everything we need. This is how we do it...</p>
+<h1>Install puppet into our base container image</h1>
+<p>Turns out the first thing you need of you want to generate config files
+with Puppet is well... puppet. TripleO uses containers from the Kolla
+project and by default they do not install Puppet. In the past TripleO
+uses an 'agent container' to manage the puppet installation requirements.
+This worked okay for the compute role (a very minimal set of services)
+but doesn't work as nicely for the broader set of OpenStack services because
+packages need to be pre-installed into the 'agent' container in order for
+config file generation to work correctly (puppet overlays the default config
+files in many cases). Installing packages for all of OpenStack and its
+requirements into the agent container isn't ideal.</p>
+<p>Enter TripleO composable services (thanks Newton!). TripleO now supports
+composability and Kolla typically has individual containers
+for each service so it turns out the best way to generate config files
+for a specific service is to use the container for the service itself. We
+do this in two separate runs of a container: one to create config files, and
+the second one to launch the service (bind mounting/copying in the configs).
+It works really well.</p>
+<p>But we still have the issue of how do we get puppet into all of our Kolla
+containers. We were happy to discover that Kolla supports a template-overrides
+mechanism (A jinja template) that allows you to customize how containers
+are built. This is how you can use that mechanism to add puppet into
+the Centos base image used for all the OpenStack docker containers generated
+by Kolla build scripts.</p>
+<div class="highlight"><pre><span></span>$ cat template-overrides.j2
+<span class="o">{</span>% extends parent_template %<span class="o">}</span>
+<span class="o">{</span>% <span class="nb">set</span> <span class="nv">base_centos_binary_packages_append</span> <span class="o">=</span> <span class="o">[</span><span class="s1">&#39;puppet&#39;</span><span class="o">]</span> %<span class="o">}</span>
+
+kolla-build --base centos --template-override template-overrides.j2
+</pre></div>
+
+
+<h1>Control the Puppet catalog</h1>
+<p>A puppet manifest in TripleO can do a lot of things like installing packages,
+configuring files, starting a service, etc. For containers we only want to
+generate the config files. Furthermore we'd like to do this without having to
+change our puppet modules.</p>
+<p>One mechanism we use is the --tags option for 'puppet apply'. This option
+allows you to specify which resources within a given puppet manifest (or catalog) should be executed. It works really nicely to allow you to select what
+you want out of a puppet catalog.</p>
+<p>An example of this is listed below where we have a manifest to create
+a '/tmp/foo' file. When we run the manifest with the 'package' tag
+(telling it to only install packages) it does nothing at all.</p>
+<div class="highlight"><pre><span></span>$ cat test.pp 
+file <span class="o">{</span> <span class="s1">&#39;/tmp/foo&#39;</span>:
+  <span class="nv">content</span> <span class="o">=</span>&gt; <span class="s1">&#39;bar&#39;</span>,
+<span class="o">}</span>
+$ puppet apply --tags package test.pp
+Notice: Compiled catalog <span class="k">for</span> undercloud.localhost in environment production in 0.10 seconds
+Notice: Applied catalog in 0.02 seconds
+$ cat /tmp/foo
+cat: /tmp/foo: No such file or directory
+</pre></div>
+
+
+<h1>When --tags doesn't work</h1>
+<p>Turns out out --tags option of 'puppet apply' doesn't always give us the
+behavior we are after which is to generate only config files. Some puppet
+modules have custom resources with providers that can execute commands anyway.
+This might be a mysql query or an openstackclient command to create a keystone
+endpoint. Remember here that we are trying to re-use puppet modules from
+our baremetal configuration and these resources are expected to be in
+our manifests... we just don't want them to run at the time we are generating
+config files. So we need an alternative mechanism to suppress (noop out)
+these offending resources.</p>
+<p>To do this we've started using a custom built noop_resource function that
+exists in puppet-tripleo. This function dynamically configures a default
+provider for the named resource. For mysql this ends up looking like this:</p>
+<div class="highlight"><pre><span></span><span class="x">[&#39;Mysql_datadir&#39;, &#39;Mysql_user&#39;, &#39;Mysql_database&#39;, &#39;Mysql_grant&#39;, &#39;Mysql_plugin&#39;].each |String </span><span class="p">$</span><span class="nv">val</span><span class="x">| </span><span class="err">{</span><span class="x"> noop_resource(</span><span class="p">$</span><span class="nv">val</span><span class="x">) }</span>
+</pre></div>
+
+
+<p>Running a puppet manifest with this at the top will noop out any of the named
+resource types and they won't execute. Thus allowing puppet apply to complete
+and finish generating the config files within the specified manifest.</p>
+<p>The good news is most of our services don't require the noop_resource in
+order to generate config files cleanly. But for those that do the interface
+allows us to effectively disable the resources we don't want to execute.</p>
+<h1>Putting it all together: docker-puppet.py</h1>
+<p>Bringing everything together in tripleo-heat-templates to create
+one container configuration interface that will allow us to
+configurably generate per-service config files. It looks like this:</p>
+<ul>
+<li>manifest: the puppet manifest to use to generate config files (Thanks to composable services this is now per service!)</li>
+<li>puppet_tags: the puppet tags to execute within this manifest</li>
+<li>config_image: the docker image to use to generate config files. Generally we use the same image as the service itself.</li>
+<li>config_volume: where to output the resulting config tree (includes /etc/ and some other directories).</li>
+</ul>
+<p>And then we've created a custom tool to drive this per-service configuration
+called docker-puppet.py. The tool supports using the information above in a
+Json file format drive generation of the config files in a single action.</p>
+<p>It ends up working like this:</p>
+<p><a href="">Video demo: Puppet tags</a></p>
+<p>And thats it. Our config interfaces are intact. We generate the config files
+we need. And we get to carry on with our efforts to deploy with containers.</p>
+<p>Links:</p>
+<ul>
+<li><a href="http://git.openstack.org/cgit/openstack/puppet-tripleo/tree/lib/puppet/parser/functions/noop_resource.rb">puppet noop_resource function</a></li>
+<li><a href="https://review.openstack.org/#/c/416421/29/docker/docker-puppet.py">docker_puppet.py source code</a></li>
+</ul></div>
+	</div>
+		<footer>
+		  <p>Powered by <a href="http://getpelican.com/">Pelican</a>. Theme based on <a href="http://twitter.github.com/bootstrap/">Twitter Bootstrap</a>.</p>
+		  <p>&copy; Dan Prince</p>
+		</footer>
+	  </div>
+
+	</div>
+</body>
+</html>
