@@ -100,7 +100,7 @@ configurably generate per-service config files. It looks like this:&lt;/p&gt;
 called docker-puppet.py. The tool supports using the information above in a
 Json file format drive generation of the config files in a single action.&lt;/p&gt;
 &lt;p&gt;It ends up working like this:&lt;/p&gt;
-&lt;p&gt;&lt;a href=""&gt;Video demo: Puppet tags&lt;/a&gt;&lt;/p&gt;
+&lt;p&gt;&lt;a href="https://youtu.be/lqDWkBzetFk"&gt;Video demo: Docker Puppet&lt;/a&gt;&lt;/p&gt;
 &lt;p&gt;And thats it. Our config interfaces are intact. We generate the config files
 we need. And we get to carry on with our efforts to deploy with containers.&lt;/p&gt;
 &lt;p&gt;Links:&lt;/p&gt;
