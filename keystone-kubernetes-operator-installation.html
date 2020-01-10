@@ -72,7 +72,7 @@ operator-sdk up <span class="nb">local</span>
 
 
 <p>These commands create the required CRD and then launch a working version of the k8s Operator. The last command there stays running in your local terminal and logs any output from your k8s Operator. As long as you leave it running you can run API commands to create
-k8s custom resources provided by your Operator. It’s important to note that by default this command runs with <em>your</em> local credentials and the Operator has access to any permissions that you have as well. There are some options to fine tune 'up local' though so it runs with different creds (--kubeconfig) or in an alternate namespace (--namespace) if you need them too. See (operator-sdk --help for more)</p>
+k8s custom resources provided by your Operator. It’s important to note that by default this command runs with your local credentials and the Operator has access to any permissions that you have as well. There are some options to fine tune 'up local' though so it runs with different creds (--kubeconfig) or in an alternate namespace (--namespace) if you need them too. See (operator-sdk --help for more)</p>
 <h1>Deploying an Operator on the CLI</h1>
 <p>Because Operators are containers that are deployed in your Kubernetes cluster, deploying them is building and publishing a container. The operator-sdk has a few commands that make this streamlined:</p>
 <div class="highlight"><pre><span></span>operator-sdk build openstack-keystone --image-builder buildah
