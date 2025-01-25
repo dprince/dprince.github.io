@@ -29,6 +29,7 @@
 		<div class="container-fluid">
 		  <a class="brand" href="https://dprince.github.io/">/home/dprince</a>
 			<ul class="nav">
+					<li ><a href="https://dprince.github.io/category/openshift.html">OpenShift</a></li>
 					<li ><a href="https://dprince.github.io/category/openstack.html">OpenStack</a></li>
 					<li class="active"><a href="https://dprince.github.io/category/tripleo.html">TripleO</a></li>
 			</ul>
@@ -43,13 +44,11 @@
 			<h3>Blogroll</h3>
 			<ul>
 				<li><a href="http://planet.openstack.org/">OpenStack</a></li>
-				<li><a href="http://tripleo.org">TripleO</a></li>
 			</ul>
 			<div class="social">
 			<h3>Social</h3>
 			<ul>
 				<li><a href="https://github.com/dprince">Github</a></li>
-				<li><a href="https://twitter.com/dovetaildan">Twitter</a></li>
 			</ul>
 			</div>
 		</div>
@@ -94,13 +93,12 @@ mechanism (A jinja template) that allows you to customize how containers
 are built. This is how you can use that mechanism to add puppet into
 the Centos base image used for all the OpenStack docker containers generated
 by Kolla build scripts.</p>
-<div class="highlight"><pre><span></span>$ cat template-overrides.j2
-<span class="o">{</span>% extends parent_template %<span class="o">}</span>
-<span class="o">{</span>% <span class="nb">set</span> <span class="nv">base_centos_binary_packages_append</span> <span class="o">=</span> <span class="o">[</span><span class="s1">&#39;puppet&#39;</span><span class="o">]</span> %<span class="o">}</span>
+<div class="highlight"><pre><span></span><code>$<span class="w"> </span>cat<span class="w"> </span>template-overrides.j2
+<span class="o">{</span>%<span class="w"> </span>extends<span class="w"> </span>parent_template<span class="w"> </span>%<span class="o">}</span>
+<span class="o">{</span>%<span class="w"> </span><span class="nb">set</span><span class="w"> </span><span class="nv">base_centos_binary_packages_append</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="o">[</span><span class="s1">&#39;puppet&#39;</span><span class="o">]</span><span class="w"> </span>%<span class="o">}</span>
 
-kolla-build --base centos --template-override template-overrides.j2
-</pre></div>
-
+kolla-build<span class="w"> </span>--base<span class="w"> </span>centos<span class="w"> </span>--template-override<span class="w"> </span>template-overrides.j2
+</code></pre></div>
 
 <h1>Control the Puppet catalog</h1>
 <p>A puppet manifest in TripleO can do a lot of things like installing packages,
@@ -113,17 +111,16 @@ you want out of a puppet catalog.</p>
 <p>An example of this is listed below where we have a manifest to create
 a '/tmp/foo' file. When we run the manifest with the 'package' tag
 (telling it to only install packages) it does nothing at all.</p>
-<div class="highlight"><pre><span></span>$ cat test.pp 
-file <span class="o">{</span> <span class="s1">&#39;/tmp/foo&#39;</span>:
-  <span class="nv">content</span> <span class="o">=</span>&gt; <span class="s1">&#39;bar&#39;</span>,
+<div class="highlight"><pre><span></span><code>$<span class="w"> </span>cat<span class="w"> </span>test.pp<span class="w"> </span>
+file<span class="w"> </span><span class="o">{</span><span class="w"> </span><span class="s1">&#39;/tmp/foo&#39;</span>:
+<span class="w">  </span><span class="nv">content</span><span class="w"> </span><span class="o">=</span>&gt;<span class="w"> </span><span class="s1">&#39;bar&#39;</span>,
 <span class="o">}</span>
-$ puppet apply --tags package test.pp
-Notice: Compiled catalog <span class="k">for</span> undercloud.localhost in environment production in <span class="m">0</span>.10 seconds
-Notice: Applied catalog in <span class="m">0</span>.02 seconds
-$ cat /tmp/foo
-cat: /tmp/foo: No such file or directory
-</pre></div>
-
+$<span class="w"> </span>puppet<span class="w"> </span>apply<span class="w"> </span>--tags<span class="w"> </span>package<span class="w"> </span>test.pp
+Notice:<span class="w"> </span>Compiled<span class="w"> </span>catalog<span class="w"> </span><span class="k">for</span><span class="w"> </span>undercloud.localhost<span class="w"> </span><span class="k">in</span><span class="w"> </span>environment<span class="w"> </span>production<span class="w"> </span><span class="k">in</span><span class="w"> </span><span class="m">0</span>.10<span class="w"> </span>seconds
+Notice:<span class="w"> </span>Applied<span class="w"> </span>catalog<span class="w"> </span><span class="k">in</span><span class="w"> </span><span class="m">0</span>.02<span class="w"> </span>seconds
+$<span class="w"> </span>cat<span class="w"> </span>/tmp/foo
+cat:<span class="w"> </span>/tmp/foo:<span class="w"> </span>No<span class="w"> </span>such<span class="w"> </span>file<span class="w"> </span>or<span class="w"> </span>directory
+</code></pre></div>
 
 <h1>When --tags doesn't work</h1>
 <p>The --tags option of 'puppet apply' doesn't always give us the
@@ -138,9 +135,8 @@ these offending resources.</p>
 <p>To do this we've started using a custom built noop_resource function that
 exists in puppet-tripleo. This function dynamically configures a default
 provider for the named resource. For mysql this ends up looking like this:</p>
-<div class="highlight"><pre><span></span><span class="p">[</span><span class="s1">&#39;Mysql_datadir&#39;</span><span class="p">,</span> <span class="s1">&#39;Mysql_user&#39;</span><span class="p">,</span> <span class="s1">&#39;Mysql_database&#39;</span><span class="p">,</span> <span class="s1">&#39;Mysql_grant&#39;</span><span class="p">,</span> <span class="s1">&#39;Mysql_plugin&#39;</span><span class="p">].</span><span class="k">each</span> <span class="o">|</span><span class="n">String</span> <span class="err">$</span><span class="n">val</span><span class="o">|</span> <span class="err">{</span> <span class="n">noop_resource</span><span class="p">(</span><span class="err">$</span><span class="n">val</span><span class="p">)</span> <span class="err">}</span>
-</pre></div>
-
+<div class="highlight"><pre><span></span><code>[&#39;Mysql_datadir&#39;, &#39;Mysql_user&#39;, &#39;Mysql_database&#39;, &#39;Mysql_grant&#39;, &#39;Mysql_plugin&#39;].each |String $val| { noop_resource($val) }
+</code></pre></div>
 
 <p>Running a puppet manifest with this at the top will noop out any of the named
 resource types and they won't execute. Thus allowing puppet apply to complete

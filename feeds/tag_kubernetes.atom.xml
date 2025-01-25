@@ -1,2 +1,132 @@
 <?xml version="1.0" encoding="utf-8"?>
-<feed xmlns="http://www.w3.org/2005/Atom"><title>/home/dprince - kubernetes</title><link href="https://dprince.github.io/" rel="alternate"></link><link href="https://dprince.github.io/feeds/tag_kubernetes.atom.xml" rel="self"></link><id>https://dprince.github.io/</id><updated>2020-01-10T17:00:00-05:00</updated><entry><title>Keystone Operator Deploy/Upgrade on OpenShift</title><link href="https://dprince.github.io/keystone-operator-deployupgrade-on-openshift.html" rel="alternate"></link><published>2020-01-10T17:00:00-05:00</published><updated>2020-01-10T17:00:00-05:00</updated><author><name>Dan Prince</name></author><id>tag:dprince.github.io,2020-01-10:/keystone-operator-deployupgrade-on-openshift.html/</id><summary type="html">&lt;p&gt;Keystone deploy and upgrade with an OpenShift/Kubernetes Operator&lt;/p&gt;</summary><category term="openstack"></category><category term="kubernetes"></category><category term="openshift"></category></entry><entry><title>Keystone Kubernetes Operator Installation</title><link href="https://dprince.github.io/keystone-kubernetes-operator-installation.html" rel="alternate"></link><published>2019-07-19T17:00:00-04:00</published><updated>2019-07-19T17:00:00-04:00</updated><author><name>Dan Prince</name></author><id>tag:dprince.github.io,2019-07-19:/keystone-kubernetes-operator-installation.html/</id><summary type="html">&lt;p&gt;OpenStack Keystone Kubernetes Operator Installation&lt;/p&gt;</summary><category term="openstack"></category><category term="kubernetes"></category><category term="openshift"></category></entry></feed>
+<feed xmlns="http://www.w3.org/2005/Atom"><title>/home/dprince - kubernetes</title><link href="https://dprince.github.io/" rel="alternate"></link><link href="https://dprince.github.io/feeds/tag_kubernetes.atom.xml" rel="self"></link><id>https://dprince.github.io/</id><updated>2020-01-10T17:00:00-05:00</updated><entry><title>Keystone Operator Deploy/Upgrade on OpenShift</title><link href="https://dprince.github.io/keystone-operator-deployupgrade-on-openshift.html" rel="alternate"></link><published>2020-01-10T17:00:00-05:00</published><updated>2020-01-10T17:00:00-05:00</updated><author><name>Dan Prince</name></author><id>tag:dprince.github.io,2020-01-10:/keystone-operator-deployupgrade-on-openshift.html</id><summary type="html">&lt;p&gt;Keystone deploy and upgrade with an OpenShift/Kubernetes Operator&lt;/p&gt;</summary><content type="html">&lt;p&gt;My &lt;a href="https://dprince.github.io/keystone-kubernetes-operator-installation.html"&gt;last post&lt;/a&gt; was about installing an Operator for Keystone. In this post I go over how to use the same &lt;a href="https://github.com/openstack-k8s-operators/keystone-operator"&gt;Keystone Operator&lt;/a&gt; to
+deploy and then upgrade a working Keystone API on OpenShift using containers from the &lt;a href="https://www.rdoproject.org/"&gt;RDO project&lt;/a&gt;.&lt;/p&gt;
+&lt;h1&gt;Creating a route to access Keystone API&lt;/h1&gt;
+&lt;p&gt;The first thing is to create a route that will be used to access the Keystone API outside (external to) the OpenShift/Kubernetes cluster. Create yaml file called route.yaml that looks something like this (swapping in values for your local project and domain):&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span&gt;&lt;/span&gt;&lt;code&gt;&lt;span class="nt"&gt;apiVersion&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="l l-Scalar l-Scalar-Plain"&gt;route.openshift.io/v1&lt;/span&gt;
+&lt;span class="nt"&gt;kind&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="l l-Scalar l-Scalar-Plain"&gt;Route&lt;/span&gt;
+&lt;span class="nt"&gt;metadata&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt;
+&lt;span class="w"&gt;  &lt;/span&gt;&lt;span class="nt"&gt;name&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="l l-Scalar l-Scalar-Plain"&gt;keystone&lt;/span&gt;
+&lt;span class="w"&gt;  &lt;/span&gt;&lt;span class="nt"&gt;namespace&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="l l-Scalar l-Scalar-Plain"&gt;test&lt;/span&gt;
+&lt;span class="nt"&gt;spec&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt;
+&lt;span class="w"&gt;  &lt;/span&gt;&lt;span class="nt"&gt;host&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="l l-Scalar l-Scalar-Plain"&gt;keystone-test.apps.test.dprince&lt;/span&gt;
+&lt;span class="w"&gt;  &lt;/span&gt;&lt;span class="nt"&gt;path&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="l l-Scalar l-Scalar-Plain"&gt;/&lt;/span&gt;
+&lt;span class="w"&gt;  &lt;/span&gt;&lt;span class="nt"&gt;to&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt;
+&lt;span class="w"&gt;    &lt;/span&gt;&lt;span class="nt"&gt;kind&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="l l-Scalar l-Scalar-Plain"&gt;Service&lt;/span&gt;
+&lt;span class="w"&gt;    &lt;/span&gt;&lt;span class="nt"&gt;name&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="l l-Scalar l-Scalar-Plain"&gt;keystone&lt;/span&gt;
+&lt;span class="w"&gt;  &lt;/span&gt;&lt;span class="nt"&gt;port&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt;
+&lt;span class="w"&gt;    &lt;/span&gt;&lt;span class="nt"&gt;targetPort&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="l l-Scalar l-Scalar-Plain"&gt;api&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
+
+&lt;p&gt;Once you have created the file create the route with the following command:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span&gt;&lt;/span&gt;&lt;code&gt;oc&lt;span class="w"&gt; &lt;/span&gt;create&lt;span class="w"&gt; &lt;/span&gt;-f&lt;span class="w"&gt; &lt;/span&gt;route.yaml
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
+
+&lt;p&gt;NOTE: We create the route first because so that we can pass the dns hostname being used as a parameter when creating the Keystone API. This is used to "bootstrap" the Keystone service endpoints. Also note that OpenShift routes support a variety of TLS options (including edge and end-to-end configurations). For simplicity we are keeping with standard http for this demo.&lt;/p&gt;
+&lt;p&gt;Once you have completed these steps you should have an OpenShift route created that points to http://keystone-test.apps.test.dprince. This will route traffic through the OpenShift load balancer to the internal keystone service running on OpenShift.&lt;/p&gt;
+&lt;h1&gt;Deploying Keystone API&lt;/h1&gt;
+&lt;p&gt;The Keystone Operator gave us a custom CRD which can be used to create Keystone objects within the cluster. Create a YAML file representing the Keystone API we want to create like this:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span&gt;&lt;/span&gt;&lt;code&gt;&lt;span class="nt"&gt;apiVersion&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="l l-Scalar l-Scalar-Plain"&gt;keystone.openstack.org/v1&lt;/span&gt;
+&lt;span class="nt"&gt;kind&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="l l-Scalar l-Scalar-Plain"&gt;KeystoneApi&lt;/span&gt;
+&lt;span class="nt"&gt;metadata&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt;
+&lt;span class="w"&gt;  &lt;/span&gt;&lt;span class="nt"&gt;name&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="l l-Scalar l-Scalar-Plain"&gt;keystone&lt;/span&gt;
+&lt;span class="nt"&gt;spec&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt;
+&lt;span class="w"&gt;  &lt;/span&gt;&lt;span class="nt"&gt;adminPassword&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="l l-Scalar l-Scalar-Plain"&gt;foobar123&lt;/span&gt;
+&lt;span class="w"&gt;  &lt;/span&gt;&lt;span class="nt"&gt;containerImage&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="l l-Scalar l-Scalar-Plain"&gt;docker.io/tripleostein/centos-binary-keystone:current-tripleo&lt;/span&gt;
+&lt;span class="w"&gt;  &lt;/span&gt;&lt;span class="nt"&gt;replicas&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="l l-Scalar l-Scalar-Plain"&gt;1&lt;/span&gt;
+&lt;span class="w"&gt;  &lt;/span&gt;&lt;span class="nt"&gt;databasePassword&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="l l-Scalar l-Scalar-Plain"&gt;foobar123&lt;/span&gt;
+&lt;span class="w"&gt;  &lt;/span&gt;&lt;span class="nt"&gt;databaseHostname&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="l l-Scalar l-Scalar-Plain"&gt;openstack-db-mariadb&lt;/span&gt;
+&lt;span class="w"&gt;  &lt;/span&gt;&lt;span class="c1"&gt;# used for keystone-manage bootstrap endpoints&lt;/span&gt;
+&lt;span class="w"&gt;  &lt;/span&gt;&lt;span class="nt"&gt;apiEndpoint&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="l l-Scalar l-Scalar-Plain"&gt;http://keystone-test.apps.test.dprince/&lt;/span&gt;
+&lt;span class="w"&gt;  &lt;/span&gt;&lt;span class="c1"&gt;# used to create the DB schema&lt;/span&gt;
+&lt;span class="w"&gt;  &lt;/span&gt;&lt;span class="nt"&gt;databaseAdminUsername&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="l l-Scalar l-Scalar-Plain"&gt;root&lt;/span&gt;
+&lt;span class="w"&gt;  &lt;/span&gt;&lt;span class="nt"&gt;databaseAdminPassword&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="l l-Scalar l-Scalar-Plain"&gt;foobar123&lt;/span&gt;
+&lt;span class="w"&gt;  &lt;/span&gt;&lt;span class="nt"&gt;mysqlContainerImage&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="l l-Scalar l-Scalar-Plain"&gt;docker.io/tripleomaster/centos-binary-mariadb:current-tripleo&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
+
+&lt;p&gt;Save this file as a YAML file called keystone.yaml and then create the resource with the following command.&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span&gt;&lt;/span&gt;&lt;code&gt;oc&lt;span class="w"&gt; &lt;/span&gt;create&lt;span class="w"&gt; &lt;/span&gt;-f&lt;span class="w"&gt; &lt;/span&gt;keystone.yaml
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
+
+&lt;p&gt;NOTE: The assumption here is that you are already running a MariaDB instances in your cluster. Eventually maybe we'll have an Operator for that too, and we could even abstract away some of the DB parameters above once that happens.&lt;/p&gt;
+&lt;p&gt;Once the command completes the Keystone Operator will start the deployment. It goes through several phases including: creating the Keystone database, creating a &lt;a href="https://kubernetes.io/docs/concepts/workloads/controllers/deployment/"&gt;Kubernetes Deployment&lt;/a&gt; resource within the cluster, and then bootstrapping the Keystone installation. You can watch the stdout of your Keystone Operator pod if you want to see it happen live. All of the commands should take about a minute or so to complete and once it is finished you should have a live working Keystone installation.&lt;/p&gt;
+&lt;h1&gt;Test it&lt;/h1&gt;
+&lt;p&gt;Now its time to actually use and test the installation. Create a file called stackrc that looks like this (again swap in values for your own environment if you are trying this):&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span&gt;&lt;/span&gt;&lt;code&gt;&lt;span class="nb"&gt;export&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="nv"&gt;OS_AUTH_URL&lt;/span&gt;&lt;span class="o"&gt;=&lt;/span&gt;http://keystone-test.apps.test.dprince/
+&lt;span class="nb"&gt;export&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="nv"&gt;OS_PASSWORD&lt;/span&gt;&lt;span class="o"&gt;=&lt;/span&gt;foobar123
+&lt;span class="nb"&gt;export&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="nv"&gt;OS_USERNAME&lt;/span&gt;&lt;span class="o"&gt;=&lt;/span&gt;admin
+&lt;span class="nb"&gt;export&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="nv"&gt;OS_TENANT_NAME&lt;/span&gt;&lt;span class="o"&gt;=&lt;/span&gt;admin
+&lt;span class="nb"&gt;export&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="nv"&gt;COMPUTE_API_VERSION&lt;/span&gt;&lt;span class="o"&gt;=&lt;/span&gt;&lt;span class="m"&gt;1&lt;/span&gt;.1
+&lt;span class="nb"&gt;export&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="nv"&gt;OS_NO_CACHE&lt;/span&gt;&lt;span class="o"&gt;=&lt;/span&gt;True
+&lt;span class="nb"&gt;export&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="nv"&gt;OS_IDENTITY_API_VERSION&lt;/span&gt;&lt;span class="o"&gt;=&lt;/span&gt;&lt;span class="m"&gt;3&lt;/span&gt;
+&lt;span class="nb"&gt;export&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="nv"&gt;OS_PROJECT_DOMAIN_NAME&lt;/span&gt;&lt;span class="o"&gt;=&lt;/span&gt;Default
+&lt;span class="nb"&gt;export&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="nv"&gt;OS_USER_DOMAIN_NAME&lt;/span&gt;&lt;span class="o"&gt;=&lt;/span&gt;Default
+&lt;span class="nb"&gt;export&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="nv"&gt;OS_AUTH_VERSION&lt;/span&gt;&lt;span class="o"&gt;=&lt;/span&gt;&lt;span class="m"&gt;3&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
+
+&lt;p&gt;Now lets run a few sample commands to test the installation and show the version of the service:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span&gt;&lt;/span&gt;&lt;code&gt;openstack&lt;span class="w"&gt; &lt;/span&gt;token&lt;span class="w"&gt; &lt;/span&gt;issue
+openstack&lt;span class="w"&gt; &lt;/span&gt;versions&lt;span class="w"&gt; &lt;/span&gt;show
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
+
+&lt;p&gt;If you used the same containerImage from the OpenStack Train release the 'versions show' command above should display the identity service at version 3.12.&lt;/p&gt;
+&lt;h1&gt;Upgrade it&lt;/h1&gt;
+&lt;p&gt;Next we'll upgrade the Keystone deployment to the OpenStack Train release. This will be a live rolling upgrade, although I'm not sure Keystone officially supports this it demonstrates the capability and seems to work fine.&lt;/p&gt;
+&lt;p&gt;To fire off the upgrade run the following OpenShift command:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span&gt;&lt;/span&gt;&lt;code&gt;oc&lt;span class="w"&gt; &lt;/span&gt;patch&lt;span class="w"&gt; &lt;/span&gt;keystoneapi&lt;span class="w"&gt; &lt;/span&gt;keystone&lt;span class="w"&gt; &lt;/span&gt;--type&lt;span class="o"&gt;=&lt;/span&gt;&lt;span class="s1"&gt;&amp;#39;json&amp;#39;&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;-p&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="s1"&gt;&amp;#39;[{&amp;quot;op&amp;quot;: &amp;quot;replace&amp;quot;, &amp;quot;path&amp;quot;: &amp;quot;/spec/containerImage&amp;quot;, &amp;quot;value&amp;quot;:&amp;quot;docker.io/tripleotrain/centos-binary-keystone:current-tripleo&amp;quot;}]&amp;#39;&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
+
+&lt;p&gt;This upgdates the keystoneapi resource we initially deployed to use a new containerImage for
+the Train release. The Operator watches for changes to keystoneapi resources and reacts to
+them immediately and takes the appropriate actions to run the DB sync for the upgraded
+and do a rolling update to a newer API container. Again you can watch the stdout of the
+Keystone Operator container if you want to see it happen live. It should take less than a minute
+to finish.&lt;/p&gt;
+&lt;h1&gt;Prove that it works&lt;/h1&gt;
+&lt;p&gt;Once the upgrade finishes we'll run another versions command to see what is returned.&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span&gt;&lt;/span&gt;&lt;code&gt;openstack&lt;span class="w"&gt; &lt;/span&gt;versions&lt;span class="w"&gt; &lt;/span&gt;show
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
+
+&lt;p&gt;If everything ran correctly you should see 3.13 running the latest OpenStack Train release.&lt;/p&gt;
+&lt;h1&gt;Some final thoughts&lt;/h1&gt;
+&lt;p&gt;Hopefully this gives an idea of what it is like to deploy and manage an application with a Kubernetes/OpenShift Operator. There is still a lot to be implemented to make the Keystone Operator feature complete but it already demos quite nicely I think.&lt;/p&gt;</content><category term="OpenStack"></category><category term="openstack"></category><category term="kubernetes"></category><category term="openshift"></category></entry><entry><title>Keystone Kubernetes Operator Installation</title><link href="https://dprince.github.io/keystone-kubernetes-operator-installation.html" rel="alternate"></link><published>2019-07-19T17:00:00-04:00</published><updated>2019-07-19T17:00:00-04:00</updated><author><name>Dan Prince</name></author><id>tag:dprince.github.io,2019-07-19:/keystone-kubernetes-operator-installation.html</id><summary type="html">&lt;p&gt;OpenStack Keystone Kubernetes Operator Installation&lt;/p&gt;</summary><content type="html">&lt;p&gt;&lt;img alt="Installing a Keystone k8s Operator" src="https://dprince.github.io/images/openshift_keystone_operator_installed.png"&gt;&lt;/p&gt;
+&lt;p&gt;Since Open Infrastructure Summit in Denver earlier this year I've spent some time ramping up on &lt;a href="https://coreos.com/operators/"&gt;Kubernetes Operators&lt;/a&gt; and Golang. Perhaps “some time” is an understatement, this is more of a coaxed deep dive into some technology which I knew existed but hadn’t paid proper attention too yet. (hint: I was asked to look into this). In the past few weeks I've created a working version of a &lt;a href="https://github.com/openstack-k8s-operators/keystone-operator"&gt;Keystone Kubernetes Operator&lt;/a&gt; in Go.&lt;/p&gt;
+&lt;p&gt;The Keystone Operator is based on the &lt;a href="https://github.com/operator-framework/operator-sdk"&gt;operator-sdk&lt;/a&gt;  which provides a nice way to cookie cut the Operator application structure. It also provides some nice benefits for releasing and installing the Operator in your Kubernetes cluster. There are several ways to install an Operator which make them really flexible.&lt;/p&gt;
+&lt;h1&gt;For local development&lt;/h1&gt;
+&lt;p&gt;If you've built your k8s Operator with the operator-sdk you've got access to some niceties and one is the 'up local' command. Below is an example of how to use this with the current &lt;a href="https://github.com/openstack-k8s-operators/keystone-operator/blob/master/deploy/crds/keystone_v1_keystoneapi_crd.yaml"&gt;Keystone CRD&lt;/a&gt;:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span&gt;&lt;/span&gt;&lt;code&gt;kubectl&lt;span class="w"&gt; &lt;/span&gt;create&lt;span class="w"&gt; &lt;/span&gt;-f&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="o"&gt;[&lt;/span&gt;deploy/crds/keystone_v1_keystoneapi_crd.yaml&lt;span class="o"&gt;]&lt;/span&gt;
+operator-sdk&lt;span class="w"&gt; &lt;/span&gt;up&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="nb"&gt;local&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
+
+&lt;p&gt;These commands create the required CRD and then launch a working version of the k8s Operator. The last command there stays running in your local terminal and logs any output from your k8s Operator. As long as you leave it running you can run API commands to create
+k8s custom resources provided by your Operator. It’s important to note that by default this command runs with your local credentials and the Operator has access to any permissions that you have as well. There are some options to fine tune 'up local' though so it runs with different creds (--kubeconfig) or in an alternate namespace (--namespace) if you need them too. See (operator-sdk --help for more)&lt;/p&gt;
+&lt;h1&gt;Deploying an Operator on the CLI&lt;/h1&gt;
+&lt;p&gt;Because Operators are containers that are deployed in your Kubernetes cluster, deploying them is building and publishing a container. The operator-sdk has a few commands that make this streamlined:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span&gt;&lt;/span&gt;&lt;code&gt;operator-sdk&lt;span class="w"&gt; &lt;/span&gt;build&lt;span class="w"&gt; &lt;/span&gt;openstack-keystone&lt;span class="w"&gt; &lt;/span&gt;--image-builder&lt;span class="w"&gt; &lt;/span&gt;buildah
+podman&lt;span class="w"&gt; &lt;/span&gt;tag&lt;span class="w"&gt; &lt;/span&gt;&amp;lt;image&lt;span class="w"&gt; &lt;/span&gt;id&amp;gt;&lt;span class="w"&gt; &lt;/span&gt;quay.io/openstack-k8s-operators/keystone-operator:devel
+podman&lt;span class="w"&gt; &lt;/span&gt;push&lt;span class="w"&gt; &lt;/span&gt;quay.io/openstack-k8s-operators/keystone-operator:devel
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
+
+&lt;p&gt;Once you've uploaded your container to a registry you can deploy it into your cluster on the CLI using files in the 'deploy' directory. Using either kubectl or oc you can deploy them like this:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span&gt;&lt;/span&gt;&lt;code&gt;kubectl&lt;span class="w"&gt; &lt;/span&gt;create&lt;span class="w"&gt; &lt;/span&gt;-f&lt;span class="w"&gt; &lt;/span&gt;deploy/service_account.yaml
+kubectl&lt;span class="w"&gt; &lt;/span&gt;create&lt;span class="w"&gt; &lt;/span&gt;-f&lt;span class="w"&gt; &lt;/span&gt;deploy/role.yaml
+kubectl&lt;span class="w"&gt; &lt;/span&gt;create&lt;span class="w"&gt; &lt;/span&gt;-f&lt;span class="w"&gt; &lt;/span&gt;deploy/role_binding.yaml
+kubectl&lt;span class="w"&gt; &lt;/span&gt;create&lt;span class="w"&gt; &lt;/span&gt;-f&lt;span class="w"&gt; &lt;/span&gt;deploy/operator.yaml
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
+
+&lt;h1&gt;Deploying an Operator via OLM&lt;/h1&gt;
+&lt;p&gt;Lastly there is a cool new &lt;a href="https://github.com/operator-framework/operator-lifecycle-manager"&gt;Operator Lifecycle Manager&lt;/a&gt; that takes care of some of the k8s Operator
+management for you. I won't get into all the details here but the benefits of using the OLM
+are automatic k8s Operator deployment from channels, dependency management between operators (a bit crude at the moment but promising), and integration with OperatorHub.&lt;/p&gt;
+&lt;p&gt;In order to integrate with OLM you need a CSV (clusterserviceversion) and the operator-sdk makes this fairly easy too via the 'operator-sdk olm-catalog gen-csv' command. When you initially create a CSV some things are automatically generated but a few others need to be manually specified. Say you've already crafted a 0.0.1 CSV and you want to release 0.0.2 you could do it like this via the operator-sdk.&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span&gt;&lt;/span&gt;&lt;code&gt;operator-sdk&lt;span class="w"&gt; &lt;/span&gt;olm-catalog&lt;span class="w"&gt; &lt;/span&gt;gen-csv&lt;span class="w"&gt; &lt;/span&gt;--csv-channel&lt;span class="w"&gt; &lt;/span&gt;default&lt;span class="w"&gt; &lt;/span&gt;--operator-name&lt;span class="w"&gt; &lt;/span&gt;keystone-operator&lt;span class="w"&gt; &lt;/span&gt;--csv-version&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="m"&gt;0&lt;/span&gt;.0.2&lt;span class="w"&gt; &lt;/span&gt;--verbose&lt;span class="w"&gt; &lt;/span&gt;--from-version&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="m"&gt;0&lt;/span&gt;.0.1
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
+
+&lt;p&gt;Generated CSV's can be deployed on the CLI just like any other custom resource.&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span&gt;&lt;/span&gt;&lt;code&gt;kubectl&lt;span class="w"&gt; &lt;/span&gt;create&lt;span class="w"&gt; &lt;/span&gt;-f&lt;span class="w"&gt; &lt;/span&gt;deploy/olm-catalog/keystone-operator/0.0.1/keystone-operator.v0.0.1.clusterserviceversion.yaml
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
+
+&lt;p&gt;This will take care of checking (and possibly installing) dependencies for roles, service accounts,
+and ultimately if everything checks out it will fire off a Deployment to install the k8s Operator in the cluster. It even has a spot for a nice icon there which will show up in your k8s console if you've got the OLM components installed there.&lt;/p&gt;
+&lt;h1&gt;Summary&lt;/h1&gt;
+&lt;p&gt;As someone who has worked on OpenStack deployment for the last few years, k8s Operators check a lot of the boxes that I'm passionate about. Assuming your goal is to deploy on k8s, when using k8s Operators your deployment tools are built using the same framework as your production applications (i.e k8s API's). The tools have an API that is provided as a CRD just like any other k8s resources you are using and can be managed as such. Cutting a new release of the deployment tools is as simple as building and publishing a container. Lastly, given the tools above the integration with the dev/test process is very streamlined. I think I could get used to this.&lt;/p&gt;</content><category term="OpenStack"></category><category term="openstack"></category><category term="kubernetes"></category><category term="openshift"></category></entry></feed>

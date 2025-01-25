@@ -29,6 +29,7 @@
 		<div class="container-fluid">
 		  <a class="brand" href="https://dprince.github.io/">/home/dprince</a>
 			<ul class="nav">
+					<li ><a href="https://dprince.github.io/category/openshift.html">OpenShift</a></li>
 					<li class="active"><a href="https://dprince.github.io/category/openstack.html">OpenStack</a></li>
 					<li ><a href="https://dprince.github.io/category/tripleo.html">TripleO</a></li>
 			</ul>
@@ -43,13 +44,11 @@
 			<h3>Blogroll</h3>
 			<ul>
 				<li><a href="http://planet.openstack.org/">OpenStack</a></li>
-				<li><a href="http://tripleo.org">TripleO</a></li>
 			</ul>
 			<div class="social">
 			<h3>Social</h3>
 			<ul>
 				<li><a href="https://github.com/dprince">Github</a></li>
-				<li><a href="https://twitter.com/dovetaildan">Twitter</a></li>
 			</ul>
 			</div>
 		</div>
@@ -66,42 +65,37 @@ tags: <a href="https://dprince.github.io/tag/openstack.html">openstack</a> <a hr
 <p>The Keystone Operator is based on the <a href="https://github.com/operator-framework/operator-sdk">operator-sdk</a>  which provides a nice way to cookie cut the Operator application structure. It also provides some nice benefits for releasing and installing the Operator in your Kubernetes cluster. There are several ways to install an Operator which make them really flexible.</p>
 <h1>For local development</h1>
 <p>If you've built your k8s Operator with the operator-sdk you've got access to some niceties and one is the 'up local' command. Below is an example of how to use this with the current <a href="https://github.com/openstack-k8s-operators/keystone-operator/blob/master/deploy/crds/keystone_v1_keystoneapi_crd.yaml">Keystone CRD</a>:</p>
-<div class="highlight"><pre><span></span>kubectl create -f <span class="o">[</span>deploy/crds/keystone_v1_keystoneapi_crd.yaml<span class="o">]</span>
-operator-sdk up <span class="nb">local</span>
-</pre></div>
-
+<div class="highlight"><pre><span></span><code>kubectl<span class="w"> </span>create<span class="w"> </span>-f<span class="w"> </span><span class="o">[</span>deploy/crds/keystone_v1_keystoneapi_crd.yaml<span class="o">]</span>
+operator-sdk<span class="w"> </span>up<span class="w"> </span><span class="nb">local</span>
+</code></pre></div>
 
 <p>These commands create the required CRD and then launch a working version of the k8s Operator. The last command there stays running in your local terminal and logs any output from your k8s Operator. As long as you leave it running you can run API commands to create
 k8s custom resources provided by your Operator. It’s important to note that by default this command runs with your local credentials and the Operator has access to any permissions that you have as well. There are some options to fine tune 'up local' though so it runs with different creds (--kubeconfig) or in an alternate namespace (--namespace) if you need them too. See (operator-sdk --help for more)</p>
 <h1>Deploying an Operator on the CLI</h1>
 <p>Because Operators are containers that are deployed in your Kubernetes cluster, deploying them is building and publishing a container. The operator-sdk has a few commands that make this streamlined:</p>
-<div class="highlight"><pre><span></span>operator-sdk build openstack-keystone --image-builder buildah
-podman tag &lt;image id&gt; quay.io/openstack-k8s-operators/keystone-operator:devel
-podman push quay.io/openstack-k8s-operators/keystone-operator:devel
-</pre></div>
-
+<div class="highlight"><pre><span></span><code>operator-sdk<span class="w"> </span>build<span class="w"> </span>openstack-keystone<span class="w"> </span>--image-builder<span class="w"> </span>buildah
+podman<span class="w"> </span>tag<span class="w"> </span>&lt;image<span class="w"> </span>id&gt;<span class="w"> </span>quay.io/openstack-k8s-operators/keystone-operator:devel
+podman<span class="w"> </span>push<span class="w"> </span>quay.io/openstack-k8s-operators/keystone-operator:devel
+</code></pre></div>
 
 <p>Once you've uploaded your container to a registry you can deploy it into your cluster on the CLI using files in the 'deploy' directory. Using either kubectl or oc you can deploy them like this:</p>
-<div class="highlight"><pre><span></span>kubectl create -f deploy/service_account.yaml
-kubectl create -f deploy/role.yaml
-kubectl create -f deploy/role_binding.yaml
-kubectl create -f deploy/operator.yaml
-</pre></div>
-
+<div class="highlight"><pre><span></span><code>kubectl<span class="w"> </span>create<span class="w"> </span>-f<span class="w"> </span>deploy/service_account.yaml
+kubectl<span class="w"> </span>create<span class="w"> </span>-f<span class="w"> </span>deploy/role.yaml
+kubectl<span class="w"> </span>create<span class="w"> </span>-f<span class="w"> </span>deploy/role_binding.yaml
+kubectl<span class="w"> </span>create<span class="w"> </span>-f<span class="w"> </span>deploy/operator.yaml
+</code></pre></div>
 
 <h1>Deploying an Operator via OLM</h1>
 <p>Lastly there is a cool new <a href="https://github.com/operator-framework/operator-lifecycle-manager">Operator Lifecycle Manager</a> that takes care of some of the k8s Operator
 management for you. I won't get into all the details here but the benefits of using the OLM
 are automatic k8s Operator deployment from channels, dependency management between operators (a bit crude at the moment but promising), and integration with OperatorHub.</p>
 <p>In order to integrate with OLM you need a CSV (clusterserviceversion) and the operator-sdk makes this fairly easy too via the 'operator-sdk olm-catalog gen-csv' command. When you initially create a CSV some things are automatically generated but a few others need to be manually specified. Say you've already crafted a 0.0.1 CSV and you want to release 0.0.2 you could do it like this via the operator-sdk.</p>
-<div class="highlight"><pre><span></span>operator-sdk olm-catalog gen-csv --csv-channel default --operator-name keystone-operator --csv-version <span class="m">0</span>.0.2 --verbose --from-version <span class="m">0</span>.0.1
-</pre></div>
-
+<div class="highlight"><pre><span></span><code>operator-sdk<span class="w"> </span>olm-catalog<span class="w"> </span>gen-csv<span class="w"> </span>--csv-channel<span class="w"> </span>default<span class="w"> </span>--operator-name<span class="w"> </span>keystone-operator<span class="w"> </span>--csv-version<span class="w"> </span><span class="m">0</span>.0.2<span class="w"> </span>--verbose<span class="w"> </span>--from-version<span class="w"> </span><span class="m">0</span>.0.1
+</code></pre></div>
 
 <p>Generated CSV's can be deployed on the CLI just like any other custom resource.</p>
-<div class="highlight"><pre><span></span>kubectl create -f deploy/olm-catalog/keystone-operator/0.0.1/keystone-operator.v0.0.1.clusterserviceversion.yaml
-</pre></div>
-
+<div class="highlight"><pre><span></span><code>kubectl<span class="w"> </span>create<span class="w"> </span>-f<span class="w"> </span>deploy/olm-catalog/keystone-operator/0.0.1/keystone-operator.v0.0.1.clusterserviceversion.yaml
+</code></pre></div>
 
 <p>This will take care of checking (and possibly installing) dependencies for roles, service accounts,
 and ultimately if everything checks out it will fire off a Deployment to install the k8s Operator in the cluster. It even has a spot for a nice icon there which will show up in your k8s console if you've got the OLM components installed there.</p>

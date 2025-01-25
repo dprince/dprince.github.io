@@ -29,6 +29,7 @@
 		<div class="container-fluid">
 		  <a class="brand" href="https://dprince.github.io/">/home/dprince</a>
 			<ul class="nav">
+					<li ><a href="https://dprince.github.io/category/openshift.html">OpenShift</a></li>
 					<li class="active"><a href="https://dprince.github.io/category/openstack.html">OpenStack</a></li>
 					<li ><a href="https://dprince.github.io/category/tripleo.html">TripleO</a></li>
 			</ul>
@@ -43,13 +44,11 @@
 			<h3>Blogroll</h3>
 			<ul>
 				<li><a href="http://planet.openstack.org/">OpenStack</a></li>
-				<li><a href="http://tripleo.org">TripleO</a></li>
 			</ul>
 			<div class="social">
 			<h3>Social</h3>
 			<ul>
 				<li><a href="https://github.com/dprince">Github</a></li>
-				<li><a href="https://twitter.com/dovetaildan">Twitter</a></li>
 			</ul>
 			</div>
 		</div>
@@ -65,85 +64,78 @@ tags: <a href="https://dprince.github.io/tag/openstack.html">openstack</a> <a hr
 deploy and then upgrade a working Keystone API on OpenShift using containers from the <a href="https://www.rdoproject.org/">RDO project</a>.</p>
 <h1>Creating a route to access Keystone API</h1>
 <p>The first thing is to create a route that will be used to access the Keystone API outside (external to) the OpenShift/Kubernetes cluster. Create yaml file called route.yaml that looks something like this (swapping in values for your local project and domain):</p>
-<div class="highlight"><pre><span></span><span class="nt">apiVersion</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">route.openshift.io/v1</span>
-<span class="nt">kind</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">Route</span>
+<div class="highlight"><pre><span></span><code><span class="nt">apiVersion</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">route.openshift.io/v1</span>
+<span class="nt">kind</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Route</span>
 <span class="nt">metadata</span><span class="p">:</span>
-  <span class="nt">name</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">keystone</span>
-  <span class="nt">namespace</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">test</span>
+<span class="w">  </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">keystone</span>
+<span class="w">  </span><span class="nt">namespace</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">test</span>
 <span class="nt">spec</span><span class="p">:</span>
-  <span class="nt">host</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">keystone-test.apps.test.dprince</span>
-  <span class="nt">path</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">/</span>
-  <span class="nt">to</span><span class="p">:</span>
-    <span class="nt">kind</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">Service</span>
-    <span class="nt">name</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">keystone</span>
-  <span class="nt">port</span><span class="p">:</span>
-    <span class="nt">targetPort</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">api</span>
-</pre></div>
-
+<span class="w">  </span><span class="nt">host</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">keystone-test.apps.test.dprince</span>
+<span class="w">  </span><span class="nt">path</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">/</span>
+<span class="w">  </span><span class="nt">to</span><span class="p">:</span>
+<span class="w">    </span><span class="nt">kind</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Service</span>
+<span class="w">    </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">keystone</span>
+<span class="w">  </span><span class="nt">port</span><span class="p">:</span>
+<span class="w">    </span><span class="nt">targetPort</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">api</span>
+</code></pre></div>
 
 <p>Once you have created the file create the route with the following command:</p>
-<div class="highlight"><pre><span></span>oc create -f route.yaml
-</pre></div>
-
+<div class="highlight"><pre><span></span><code>oc<span class="w"> </span>create<span class="w"> </span>-f<span class="w"> </span>route.yaml
+</code></pre></div>
 
 <p>NOTE: We create the route first because so that we can pass the dns hostname being used as a parameter when creating the Keystone API. This is used to "bootstrap" the Keystone service endpoints. Also note that OpenShift routes support a variety of TLS options (including edge and end-to-end configurations). For simplicity we are keeping with standard http for this demo.</p>
 <p>Once you have completed these steps you should have an OpenShift route created that points to http://keystone-test.apps.test.dprince. This will route traffic through the OpenShift load balancer to the internal keystone service running on OpenShift.</p>
 <h1>Deploying Keystone API</h1>
 <p>The Keystone Operator gave us a custom CRD which can be used to create Keystone objects within the cluster. Create a YAML file representing the Keystone API we want to create like this:</p>
-<div class="highlight"><pre><span></span><span class="nt">apiVersion</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">keystone.openstack.org/v1</span>
-<span class="nt">kind</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">KeystoneApi</span>
+<div class="highlight"><pre><span></span><code><span class="nt">apiVersion</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">keystone.openstack.org/v1</span>
+<span class="nt">kind</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">KeystoneApi</span>
 <span class="nt">metadata</span><span class="p">:</span>
-  <span class="nt">name</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">keystone</span>
+<span class="w">  </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">keystone</span>
 <span class="nt">spec</span><span class="p">:</span>
-  <span class="nt">adminPassword</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">foobar123</span>
-  <span class="nt">containerImage</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">docker.io/tripleostein/centos-binary-keystone:current-tripleo</span>
-  <span class="nt">replicas</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">1</span>
-  <span class="nt">databasePassword</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">foobar123</span>
-  <span class="nt">databaseHostname</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">openstack-db-mariadb</span>
-  <span class="c1"># used for keystone-manage bootstrap endpoints</span>
-  <span class="nt">apiEndpoint</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">http://keystone-test.apps.test.dprince/</span>
-  <span class="c1"># used to create the DB schema</span>
-  <span class="nt">databaseAdminUsername</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">root</span>
-  <span class="nt">databaseAdminPassword</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">foobar123</span>
-  <span class="nt">mysqlContainerImage</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">docker.io/tripleomaster/centos-binary-mariadb:current-tripleo</span>
-</pre></div>
-
+<span class="w">  </span><span class="nt">adminPassword</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">foobar123</span>
+<span class="w">  </span><span class="nt">containerImage</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">docker.io/tripleostein/centos-binary-keystone:current-tripleo</span>
+<span class="w">  </span><span class="nt">replicas</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">1</span>
+<span class="w">  </span><span class="nt">databasePassword</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">foobar123</span>
+<span class="w">  </span><span class="nt">databaseHostname</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">openstack-db-mariadb</span>
+<span class="w">  </span><span class="c1"># used for keystone-manage bootstrap endpoints</span>
+<span class="w">  </span><span class="nt">apiEndpoint</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">http://keystone-test.apps.test.dprince/</span>
+<span class="w">  </span><span class="c1"># used to create the DB schema</span>
+<span class="w">  </span><span class="nt">databaseAdminUsername</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">root</span>
+<span class="w">  </span><span class="nt">databaseAdminPassword</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">foobar123</span>
+<span class="w">  </span><span class="nt">mysqlContainerImage</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">docker.io/tripleomaster/centos-binary-mariadb:current-tripleo</span>
+</code></pre></div>
 
 <p>Save this file as a YAML file called keystone.yaml and then create the resource with the following command.</p>
-<div class="highlight"><pre><span></span>oc create -f keystone.yaml
-</pre></div>
-
+<div class="highlight"><pre><span></span><code>oc<span class="w"> </span>create<span class="w"> </span>-f<span class="w"> </span>keystone.yaml
+</code></pre></div>
 
 <p>NOTE: The assumption here is that you are already running a MariaDB instances in your cluster. Eventually maybe we'll have an Operator for that too, and we could even abstract away some of the DB parameters above once that happens.</p>
 <p>Once the command completes the Keystone Operator will start the deployment. It goes through several phases including: creating the Keystone database, creating a <a href="https://kubernetes.io/docs/concepts/workloads/controllers/deployment/">Kubernetes Deployment</a> resource within the cluster, and then bootstrapping the Keystone installation. You can watch the stdout of your Keystone Operator pod if you want to see it happen live. All of the commands should take about a minute or so to complete and once it is finished you should have a live working Keystone installation.</p>
 <h1>Test it</h1>
 <p>Now its time to actually use and test the installation. Create a file called stackrc that looks like this (again swap in values for your own environment if you are trying this):</p>
-<div class="highlight"><pre><span></span><span class="nb">export</span> <span class="nv">OS_AUTH_URL</span><span class="o">=</span>http://keystone-test.apps.test.dprince/
-<span class="nb">export</span> <span class="nv">OS_PASSWORD</span><span class="o">=</span>foobar123
-<span class="nb">export</span> <span class="nv">OS_USERNAME</span><span class="o">=</span>admin
-<span class="nb">export</span> <span class="nv">OS_TENANT_NAME</span><span class="o">=</span>admin
-<span class="nb">export</span> <span class="nv">COMPUTE_API_VERSION</span><span class="o">=</span><span class="m">1</span>.1
-<span class="nb">export</span> <span class="nv">OS_NO_CACHE</span><span class="o">=</span>True
-<span class="nb">export</span> <span class="nv">OS_IDENTITY_API_VERSION</span><span class="o">=</span><span class="m">3</span>
-<span class="nb">export</span> <span class="nv">OS_PROJECT_DOMAIN_NAME</span><span class="o">=</span>Default
-<span class="nb">export</span> <span class="nv">OS_USER_DOMAIN_NAME</span><span class="o">=</span>Default
-<span class="nb">export</span> <span class="nv">OS_AUTH_VERSION</span><span class="o">=</span><span class="m">3</span>
-</pre></div>
-
+<div class="highlight"><pre><span></span><code><span class="nb">export</span><span class="w"> </span><span class="nv">OS_AUTH_URL</span><span class="o">=</span>http://keystone-test.apps.test.dprince/
+<span class="nb">export</span><span class="w"> </span><span class="nv">OS_PASSWORD</span><span class="o">=</span>foobar123
+<span class="nb">export</span><span class="w"> </span><span class="nv">OS_USERNAME</span><span class="o">=</span>admin
+<span class="nb">export</span><span class="w"> </span><span class="nv">OS_TENANT_NAME</span><span class="o">=</span>admin
+<span class="nb">export</span><span class="w"> </span><span class="nv">COMPUTE_API_VERSION</span><span class="o">=</span><span class="m">1</span>.1
+<span class="nb">export</span><span class="w"> </span><span class="nv">OS_NO_CACHE</span><span class="o">=</span>True
+<span class="nb">export</span><span class="w"> </span><span class="nv">OS_IDENTITY_API_VERSION</span><span class="o">=</span><span class="m">3</span>
+<span class="nb">export</span><span class="w"> </span><span class="nv">OS_PROJECT_DOMAIN_NAME</span><span class="o">=</span>Default
+<span class="nb">export</span><span class="w"> </span><span class="nv">OS_USER_DOMAIN_NAME</span><span class="o">=</span>Default
+<span class="nb">export</span><span class="w"> </span><span class="nv">OS_AUTH_VERSION</span><span class="o">=</span><span class="m">3</span>
+</code></pre></div>
 
 <p>Now lets run a few sample commands to test the installation and show the version of the service:</p>
-<div class="highlight"><pre><span></span>openstack token issue
-openstack versions show
-</pre></div>
-
+<div class="highlight"><pre><span></span><code>openstack<span class="w"> </span>token<span class="w"> </span>issue
+openstack<span class="w"> </span>versions<span class="w"> </span>show
+</code></pre></div>
 
 <p>If you used the same containerImage from the OpenStack Train release the 'versions show' command above should display the identity service at version 3.12.</p>
 <h1>Upgrade it</h1>
 <p>Next we'll upgrade the Keystone deployment to the OpenStack Train release. This will be a live rolling upgrade, although I'm not sure Keystone officially supports this it demonstrates the capability and seems to work fine.</p>
 <p>To fire off the upgrade run the following OpenShift command:</p>
-<div class="highlight"><pre><span></span>oc patch keystoneapi keystone --type<span class="o">=</span><span class="s1">&#39;json&#39;</span> -p <span class="s1">&#39;[{&quot;op&quot;: &quot;replace&quot;, &quot;path&quot;: &quot;/spec/containerImage&quot;, &quot;value&quot;:&quot;docker.io/tripleotrain/centos-binary-keystone:current-tripleo&quot;}]&#39;</span>
-</pre></div>
-
+<div class="highlight"><pre><span></span><code>oc<span class="w"> </span>patch<span class="w"> </span>keystoneapi<span class="w"> </span>keystone<span class="w"> </span>--type<span class="o">=</span><span class="s1">&#39;json&#39;</span><span class="w"> </span>-p<span class="w"> </span><span class="s1">&#39;[{&quot;op&quot;: &quot;replace&quot;, &quot;path&quot;: &quot;/spec/containerImage&quot;, &quot;value&quot;:&quot;docker.io/tripleotrain/centos-binary-keystone:current-tripleo&quot;}]&#39;</span>
+</code></pre></div>
 
 <p>This upgdates the keystoneapi resource we initially deployed to use a new containerImage for
 the Train release. The Operator watches for changes to keystoneapi resources and reacts to
@@ -153,9 +145,8 @@ Keystone Operator container if you want to see it happen live. It should take le
 to finish.</p>
 <h1>Prove that it works</h1>
 <p>Once the upgrade finishes we'll run another versions command to see what is returned.</p>
-<div class="highlight"><pre><span></span>openstack versions show
-</pre></div>
-
+<div class="highlight"><pre><span></span><code>openstack<span class="w"> </span>versions<span class="w"> </span>show
+</code></pre></div>
 
 <p>If everything ran correctly you should see 3.13 running the latest OpenStack Train release.</p>
 <h1>Some final thoughts</h1>
