@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="utf-8">
+	<title>/home/dprince</title>
+	<meta name="description" content="">
+	<meta name="author" content="Dan Prince">
+
+	<!-- HTML5 shim, for IE6-8 support of HTML elements -->
+	<!--[if lt IE 9]>
+		<script src="https://dprince.github.io/theme/html5.js"></script>
+	<![endif]-->
+
+	<!-- Styles -->
+	<link href="https://dprince.github.io/theme/bootstrap.min.css" rel="stylesheet">
+	<link href="https://dprince.github.io/theme/local.css" rel="stylesheet">
+	<link href="https://dprince.github.io/theme/pygments.css" rel="stylesheet">
+
+	<!-- Feeds -->
+	<link href="https://dprince.github.io/feeds/all.atom.xml" type="application/atom+xml" rel="alternate" title="/home/dprince Atom Feed" />
+
+
+
+
+</head>
+<body>
+	<div class="topbar">
+	  <div class="topbar-inner">
+		<div class="container-fluid">
+		  <a class="brand" href="https://dprince.github.io/">/home/dprince</a>
+			<ul class="nav">
+					<li ><a href="https://dprince.github.io/category/openshift.html">OpenShift</a></li>
+					<li class="active"><a href="https://dprince.github.io/category/openstack.html">OpenStack</a></li>
+					<li ><a href="https://dprince.github.io/category/tripleo.html">TripleO</a></li>
+			</ul>
+			<p class="pull-right"><a href="https://dprince.github.io/archives.html">[archives]</a> <a href="https://dprince.github.io/tags.html">[tags]</a></p>
+		</div>
+	  </div>
+	</div>
+
+	<div class="container-fluid">
+	  <div class="sidebar">
+		<div class="well">
+			<h3>Blogroll</h3>
+			<ul>
+				<li><a href="http://planet.openstack.org/">OpenStack</a></li>
+			</ul>
+			<div class="social">
+			<h3>Social</h3>
+			<ul>
+				<li><a href="https://github.com/dprince">Github</a></li>
+			</ul>
+			</div>
+		</div>
+	  </div>
+	  <div class="content">
+	<div class='article'>
+		<div class="page-header"><h1>OpenStack Operator Initialization Resource</h1></div>
+		<div class="well small">Permalink: <a class="more" href="https://dprince.github.io/openstack-operator-initialization-resource.html">2025-01-26 09:00:00-05:00</a>
+by <a class="url fn" href="https://dprince.github.io/author/dan-prince.html">Dan Prince </a>
+ in <a href="https://dprince.github.io/category/openstack.html">OpenStack</a>
+tags: <a href="https://dprince.github.io/tag/openstack.html">openstack</a> <a href="https://dprince.github.io/tag/openshift.html">openshift</a> </div>
+		<div><h2>RHOSO a set of Kubernetes operators to deploy OpenStack</h2>
+<p>Over the past few years, I’ve had the privilege of working on a team at Red Hat, where we’ve developed a comprehensive set of Kubernetes
+operators specifically designed to deploy OpenStack. At this point we have a total of over 20 operators. While these operators are each
+focussed on deploying their respective openstack services our desire is to deploy them as a single product called RHOSO (Red Hat OpenStack on OpenShift).</p>
+<h2>Deploying with OLM, our journey so far</h2>
+<p>To deploy our operators, we utilize OLM (Operator Lifecycle Manager), a package manager that simplifies the process of deploying operators on your Kubernetes cluster. OLM is included by default with OpenShift and offers several features that enable controlled installation and upgrade of operators over time. Initially, we deployed all our operators using a single OLM bundle, which managed synchronization of all operators and presented them as a single product with multiple components. However, we soon encountered an issue with the OLM bundle size limit.</p>
+<p>Our subsequent iteration, which marked the product’s general availability (GA), involved deploying the product using OLM with over 22 bundles and implementing a simple dependency mechanism to manage their deployment. This approach has proven to be effective, but we still face a few challenges:</p>
+<ul>
+<li>We desire only one operator product to be visible in the OpenShift Console (UI), while still allowing all operator package manifests to be displayed on the command line.</li>
+<li>If an older version of the openstack-operator is installed, it may still install the latest version of service operators, resulting in a mixed set of operators. While explicit pinning mechanisms exist, they require manual intervention and could be tedious.</li>
+<li>There is still a concern regarding the bundle size for the openstack-operator. We need sufficient space in the bundle to accommodate multiple versions of our Custom Resource Definitions (CRDs) in the future.</li>
+</ul>
+<p>There’s hope on the horizon with the upcoming release of OLM v1, which promises to address the bundle size issue. However, we can’t afford to wait as we urgently need a solution for OCP 4.16.</p>
+<h2>A new initialization resource</h2>
+<p>The upcoming FR2 release of the RHOSO (Red Hat OpenStack on OpenShift) product will deploy the service operators via a new initialization resource.</p>
+<p>An initialization resource is a custom resource is a k8s custom resource that is used to "initialize" something in the k8s cluster early
+so that the operators themselves can do their work. Many k8s operators and products use a similar pattern. OLM you can indicate that you have
+an initialization-resource by adding an annotation to your CSV (Cluster Service Version). The new annotation for our OpenStack operator looks like this:</p>
+<div class="highlight"><pre><span></span><code>operatorframework.io/initialization-resource: &#39;{&quot;apiVersion&quot;:&quot;operator.openstack.org/v1beta1&quot;,&quot;kind&quot;:&quot;OpenStack&quot;,&quot;metadata&quot;:{&quot;name&quot;:&quot;openstack&quot;,&quot;namespace&quot;:&quot;openstack-operators&quot;},&quot;spec&quot;:{}}&#39;
+</code></pre></div>
+
+<p>After adding this section to the CSV the OpenShift Console shows the new initialization resource as being required and looks something like this:</p>
+<p><img alt="OpenStack initialization resource UI" src="/images/openstack_operator_initialization.png"></p>
+<h2>What the OpenStack initialization resource currently does</h2>
+<p>Once created the new OpenStack initialization works by bootstrapping/installing the following resources for all of the OpenStack operators:</p>
+<ul>
+<li>CRDs (custom resource definitions)</li>
+<li>RBAC permissions</li>
+<li>Creates and manages all the OpenStack operator deployments</li>
+<li>Webhooks. Webhook certificates are now installed via cert-manager directly instead of via OLM</li>
+</ul>
+<p>All the these resources get installed directly from the openstack-operator container itself which means we no longer have any size limits. Additionally
+we can now maintain all our resources as a single product entry in the OLM catalog.</p>
+<h2>For developers, scaling service operator deployments to 0</h2>
+<p>In the past our project had individual OLM CSVs for each OpenStack service operator. But now there is only a single CSV for the entire
+set of operators. The OpenStack service operators now run as k8s Deployments which are owned by the OpenStack initialization resource.</p>
+<p>One commmon use case for developers is to install all the OpenStack operators and scale down a single operator's replicas to 0 and then
+run a modified version locally with code changes to functionally test things. The new way to do that is:</p>
+<p>1) Edit the CSV for the OpenStack Operator and set the replicas for the controller-operator to 0. This step prevents the initialization resource from overwriting any changes we make to owned resources.
+2) Edit the Deployment for the OpenStack service operator you wish to disable and set its replicas to 0.</p>
+<h2>Summary</h2>
+<p>The initialization resource really helps streamline the deployment of our operators. It also puts us in control of how operators get updated and should 
+consolidate the management of things in the future. I could see us adding a few features to the initialization resource to help prevent operator updates
+until a maintenance window and perform other setup type tasks.</p></div>
+	</div>
+		<footer>
+		  <p>Powered by <a href="http://getpelican.com/">Pelican</a>. Theme based on <a href="http://twitter.github.com/bootstrap/">Twitter Bootstrap</a>.</p>
+		  <p>&copy; Dan Prince</p>
+		</footer>
+	  </div>
+
+	</div>
+</body>
+</html>

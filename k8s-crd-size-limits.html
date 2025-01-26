@@ -102,7 +102,7 @@ This last part is important because CRD definitions contain multiple versions so
 <h2>Where does all the space go</h2>
 <p>The graph below gives a rough idea which CRDs are consuming the most space. As you can clearly see the RabbitMQ struct makes up the biggest chunk in our ControlPlane CRD. This is because the rabbitmq-operator includes a nested podTemplateSpec definition which ends up being quite large. We unfortunately didn't catch how large this struct was until after GA so there are plans to streamline, or possibly get rid of the struct in our ControlPlane CRD when we create a new version. This alone would save a good chunk of space in our CRD.</p>
 <p><img alt="Controlplane CRD Sizes" src="/images/controlplane_size.png"></p>
-<p>Note: When generating this graph I removed entries for some of the smallest services like Memcached, TLS configuration, and DNS. I also added in the top level extraMounts as the size there is still significant and fits into the analysis below.</p>
+<p>Note: When generating this graph I rolled entries for some of the smallest services like OpenStackclient, Memcached, TLS configuration, DNS, and Redis into the 'other' category. I also added in the top level extraMounts as the size there is still significant and fits into the analysis below.</p>
 <h2>Things you can do to minimize CRD size</h2>
 <p>If you also have gotten into large CRD territory here are some ideas that might help:</p>
 <ul>

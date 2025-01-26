@@ -1,5 +1,48 @@
 <?xml version="1.0" encoding="utf-8"?>
-<feed xmlns="http://www.w3.org/2005/Atom"><title>/home/dprince - OpenStack</title><link href="https://dprince.github.io/" rel="alternate"></link><link href="https://dprince.github.io/feeds/openstack.atom.xml" rel="self"></link><id>https://dprince.github.io/</id><updated>2020-01-10T17:00:00-05:00</updated><entry><title>Keystone Operator Deploy/Upgrade on OpenShift</title><link href="https://dprince.github.io/keystone-operator-deployupgrade-on-openshift.html" rel="alternate"></link><published>2020-01-10T17:00:00-05:00</published><updated>2020-01-10T17:00:00-05:00</updated><author><name>Dan Prince</name></author><id>tag:dprince.github.io,2020-01-10:/keystone-operator-deployupgrade-on-openshift.html</id><summary type="html">&lt;p&gt;Keystone deploy and upgrade with an OpenShift/Kubernetes Operator&lt;/p&gt;</summary><content type="html">&lt;p&gt;My &lt;a href="https://dprince.github.io/keystone-kubernetes-operator-installation.html"&gt;last post&lt;/a&gt; was about installing an Operator for Keystone. In this post I go over how to use the same &lt;a href="https://github.com/openstack-k8s-operators/keystone-operator"&gt;Keystone Operator&lt;/a&gt; to
+<feed xmlns="http://www.w3.org/2005/Atom"><title>/home/dprince - OpenStack</title><link href="https://dprince.github.io/" rel="alternate"></link><link href="https://dprince.github.io/feeds/openstack.atom.xml" rel="self"></link><id>https://dprince.github.io/</id><updated>2025-01-26T09:00:00-05:00</updated><entry><title>OpenStack Operator Initialization Resource</title><link href="https://dprince.github.io/openstack-operator-initialization-resource.html" rel="alternate"></link><published>2025-01-26T09:00:00-05:00</published><updated>2025-01-26T09:00:00-05:00</updated><author><name>Dan Prince</name></author><id>tag:dprince.github.io,2025-01-26:/openstack-operator-initialization-resource.html</id><summary type="html">&lt;p&gt;OpenStack Operator Initialization Resource&lt;/p&gt;</summary><content type="html">&lt;h2&gt;RHOSO a set of Kubernetes operators to deploy OpenStack&lt;/h2&gt;
+&lt;p&gt;Over the past few years, I’ve had the privilege of working on a team at Red Hat, where we’ve developed a comprehensive set of Kubernetes
+operators specifically designed to deploy OpenStack. At this point we have a total of over 20 operators. While these operators are each
+focussed on deploying their respective openstack services our desire is to deploy them as a single product called RHOSO (Red Hat OpenStack on OpenShift).&lt;/p&gt;
+&lt;h2&gt;Deploying with OLM, our journey so far&lt;/h2&gt;
+&lt;p&gt;To deploy our operators, we utilize OLM (Operator Lifecycle Manager), a package manager that simplifies the process of deploying operators on your Kubernetes cluster. OLM is included by default with OpenShift and offers several features that enable controlled installation and upgrade of operators over time. Initially, we deployed all our operators using a single OLM bundle, which managed synchronization of all operators and presented them as a single product with multiple components. However, we soon encountered an issue with the OLM bundle size limit.&lt;/p&gt;
+&lt;p&gt;Our subsequent iteration, which marked the product’s general availability (GA), involved deploying the product using OLM with over 22 bundles and implementing a simple dependency mechanism to manage their deployment. This approach has proven to be effective, but we still face a few challenges:&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;We desire only one operator product to be visible in the OpenShift Console (UI), while still allowing all operator package manifests to be displayed on the command line.&lt;/li&gt;
+&lt;li&gt;If an older version of the openstack-operator is installed, it may still install the latest version of service operators, resulting in a mixed set of operators. While explicit pinning mechanisms exist, they require manual intervention and could be tedious.&lt;/li&gt;
+&lt;li&gt;There is still a concern regarding the bundle size for the openstack-operator. We need sufficient space in the bundle to accommodate multiple versions of our Custom Resource Definitions (CRDs) in the future.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;There’s hope on the horizon with the upcoming release of OLM v1, which promises to address the bundle size issue. However, we can’t afford to wait as we urgently need a solution for OCP 4.16.&lt;/p&gt;
+&lt;h2&gt;A new initialization resource&lt;/h2&gt;
+&lt;p&gt;The upcoming FR2 release of the RHOSO (Red Hat OpenStack on OpenShift) product will deploy the service operators via a new initialization resource.&lt;/p&gt;
+&lt;p&gt;An initialization resource is a custom resource is a k8s custom resource that is used to "initialize" something in the k8s cluster early
+so that the operators themselves can do their work. Many k8s operators and products use a similar pattern. OLM you can indicate that you have
+an initialization-resource by adding an annotation to your CSV (Cluster Service Version). The new annotation for our OpenStack operator looks like this:&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;pre&gt;&lt;span&gt;&lt;/span&gt;&lt;code&gt;operatorframework.io/initialization-resource: &amp;#39;{&amp;quot;apiVersion&amp;quot;:&amp;quot;operator.openstack.org/v1beta1&amp;quot;,&amp;quot;kind&amp;quot;:&amp;quot;OpenStack&amp;quot;,&amp;quot;metadata&amp;quot;:{&amp;quot;name&amp;quot;:&amp;quot;openstack&amp;quot;,&amp;quot;namespace&amp;quot;:&amp;quot;openstack-operators&amp;quot;},&amp;quot;spec&amp;quot;:{}}&amp;#39;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
+
+&lt;p&gt;After adding this section to the CSV the OpenShift Console shows the new initialization resource as being required and looks something like this:&lt;/p&gt;
+&lt;p&gt;&lt;img alt="OpenStack initialization resource UI" src="/images/openstack_operator_initialization.png"&gt;&lt;/p&gt;
+&lt;h2&gt;What the OpenStack initialization resource currently does&lt;/h2&gt;
+&lt;p&gt;Once created the new OpenStack initialization works by bootstrapping/installing the following resources for all of the OpenStack operators:&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;CRDs (custom resource definitions)&lt;/li&gt;
+&lt;li&gt;RBAC permissions&lt;/li&gt;
+&lt;li&gt;Creates and manages all the OpenStack operator deployments&lt;/li&gt;
+&lt;li&gt;Webhooks. Webhook certificates are now installed via cert-manager directly instead of via OLM&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;All the these resources get installed directly from the openstack-operator container itself which means we no longer have any size limits. Additionally
+we can now maintain all our resources as a single product entry in the OLM catalog.&lt;/p&gt;
+&lt;h2&gt;For developers, scaling service operator deployments to 0&lt;/h2&gt;
+&lt;p&gt;In the past our project had individual OLM CSVs for each OpenStack service operator. But now there is only a single CSV for the entire
+set of operators. The OpenStack service operators now run as k8s Deployments which are owned by the OpenStack initialization resource.&lt;/p&gt;
+&lt;p&gt;One commmon use case for developers is to install all the OpenStack operators and scale down a single operator's replicas to 0 and then
+run a modified version locally with code changes to functionally test things. The new way to do that is:&lt;/p&gt;
+&lt;p&gt;1) Edit the CSV for the OpenStack Operator and set the replicas for the controller-operator to 0. This step prevents the initialization resource from overwriting any changes we make to owned resources.
+2) Edit the Deployment for the OpenStack service operator you wish to disable and set its replicas to 0.&lt;/p&gt;
+&lt;h2&gt;Summary&lt;/h2&gt;
+&lt;p&gt;The initialization resource really helps streamline the deployment of our operators. It also puts us in control of how operators get updated and should 
+consolidate the management of things in the future. I could see us adding a few features to the initialization resource to help prevent operator updates
+until a maintenance window and perform other setup type tasks.&lt;/p&gt;</content><category term="OpenStack"></category><category term="openstack"></category><category term="openshift"></category></entry><entry><title>Keystone Operator Deploy/Upgrade on OpenShift</title><link href="https://dprince.github.io/keystone-operator-deployupgrade-on-openshift.html" rel="alternate"></link><published>2020-01-10T17:00:00-05:00</published><updated>2020-01-10T17:00:00-05:00</updated><author><name>Dan Prince</name></author><id>tag:dprince.github.io,2020-01-10:/keystone-operator-deployupgrade-on-openshift.html</id><summary type="html">&lt;p&gt;Keystone deploy and upgrade with an OpenShift/Kubernetes Operator&lt;/p&gt;</summary><content type="html">&lt;p&gt;My &lt;a href="https://dprince.github.io/keystone-kubernetes-operator-installation.html"&gt;last post&lt;/a&gt; was about installing an Operator for Keystone. In this post I go over how to use the same &lt;a href="https://github.com/openstack-k8s-operators/keystone-operator"&gt;Keystone Operator&lt;/a&gt; to
 deploy and then upgrade a working Keystone API on OpenShift using containers from the &lt;a href="https://www.rdoproject.org/"&gt;RDO project&lt;/a&gt;.&lt;/p&gt;
 &lt;h1&gt;Creating a route to access Keystone API&lt;/h1&gt;
 &lt;p&gt;The first thing is to create a route that will be used to access the Keystone API outside (external to) the OpenShift/Kubernetes cluster. Create yaml file called route.yaml that looks something like this (swapping in values for your local project and domain):&lt;/p&gt;
